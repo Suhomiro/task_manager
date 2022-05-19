@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">task_manager</string>
+    <string name="press_microphone_to_record_your_day">Press microphone to record your day</string>
 </resources>

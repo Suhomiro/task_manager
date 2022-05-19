@@ -1,25 +1,36 @@
 package midis.example.task_manager.ui.main_screen.adapter
 
 import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import midis.example.task_manager.databinding.MainScreenItemBinding
 import midis.example.task_manager.model.data.TaskData
-import midis.example.task_manager.model.data.getTaskData
+import midis.example.task_manager.model.data.getListTaskData
+import midis.example.task_manager.utils.TaskDiffUtilsCallback
 
-class MainAdapter() : RecyclerView.Adapter<MainAdapter.MainItemViewHolder>() {
+class MainAdapter : RecyclerView.Adapter<MainAdapter.MainItemViewHolder>() {
 
-    private var taskData = getTaskData()
+    private var taskDataList = getListTaskData()
     private var _binding: MainScreenItemBinding? = null
     private val binding get() = _binding!!
-    private var alertDialog: AlertDialog? = null
 
     @SuppressLint("NotifyDataSetChanged")
     fun setData(data: MutableList<TaskData>) {
-        this.taskData = data
+        this.taskDataList = data
         notifyDataSetChanged()
+    }
+
+    fun setNewData(newTaskDataList: List<TaskData>) {
+        val diffCallback = TaskDiffUtilsCallback(
+            oldList = taskDataList,
+            newList = newTaskDataList
+        )
+        val diffResult = DiffUtil.calculateDiff(diffCallback)
+        taskDataList.clear()
+        taskDataList.addAll(newTaskDataList)
+        diffResult.dispatchUpdatesTo(this@MainAdapter)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MainItemViewHolder {
@@ -30,26 +41,20 @@ class MainAdapter() : RecyclerView.Adapter<MainAdapter.MainItemViewHolder>() {
 
     @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: MainItemViewHolder, position: Int) {
-        with(taskData!![position]) {
-            binding.textViewTask.text = task
-            binding.textViewCurrentTime.text = currentTime
-        }
+        holder.bind(taskDataList[position])
     }
 
-
-    override fun getItemCount(): Int {
-        return taskData?.size ?: 0
-    }
-
-    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
-        super.onDetachedFromRecyclerView(recyclerView)
-        _binding = null
-    }
-
+    override fun getItemCount(): Int =
+        taskDataList.size
 
     inner class MainItemViewHolder(binding: MainScreenItemBinding) :
         RecyclerView.ViewHolder(binding.root){
-
+        fun bind(data: TaskData) {
+            with (binding) {
+                textViewTask.text = data.taskData
+                textViewCurrentTime.text = data.currentTime
+                }
+            }
         }
 
 }

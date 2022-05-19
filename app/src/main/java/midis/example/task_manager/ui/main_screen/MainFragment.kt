@@ -5,20 +5,21 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Bundle
 import android.speech.RecognizerIntent
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import midis.example.task_manager.databinding.FragmentMainBinding
-import midis.example.task_manager.model.data.DayData
 import midis.example.task_manager.model.data.TaskData
+import midis.example.task_manager.model.data.getTaskData
 import midis.example.task_manager.ui.main_screen.adapter.MainAdapter
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.*
+
 
 class MainFragment: Fragment() {
 
@@ -30,8 +31,8 @@ class MainFragment: Fragment() {
     private var _binding: FragmentMainBinding? = null
     private val binding get() = _binding!!
     private var mainAdapter: MainAdapter? = null
-    private var dayData: DayData? = null
-    private var taskData: TaskData? = null
+    private var taskData: TaskData = getTaskData()
+    private var newTaskDataList: MutableList<TaskData> = mutableListOf()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -41,13 +42,7 @@ class MainFragment: Fragment() {
         _binding = FragmentMainBinding.inflate(inflater, container, false)
         val root: View = binding.root
         initViewModel()
-        initRecyclerView()
         btnInit()
-
-        dayData?.date = LocalDateTime.now().toString()
-        dayData?.let { mainViewModel.saveTaskData(it) }
-        //TO-DO
-
         return root
 
     }
@@ -66,8 +61,11 @@ class MainFragment: Fragment() {
                         // Recognized text is in the first position.
                         val recognizedText = result[0]
                         // Do what you want with the recognized text.
-                        taskData?.task = recognizedText
-                        dayData?.let { mainViewModel.saveTaskData(it) }
+                        taskData.currentTime = LocalTime.now().toString()
+                        taskData.taskData = recognizedText
+                        mainViewModel.saveTaskData(taskData)
+                        newTaskDataList += taskData
+                        mainAdapter?.setNewData(newTaskDataList)
                     }
                 }
             }
@@ -81,22 +79,19 @@ class MainFragment: Fragment() {
         }
         val viewModel: MainViewModel by viewModel()
         mainViewModel = viewModel
-        val observer = Observer<List<DayData>> { renderData(it) }
+        val observer = Observer<List<TaskData>> { renderData(it) }
         mainViewModel.getTaskData()
         mainViewModel.getData().observe(viewLifecycleOwner, observer)
     }
 
-    private fun initRecyclerView(){
-        mainAdapter = MainAdapter()
-        val linearLayoutManager = LinearLayoutManager(activity)
-        binding.recyclerViewMainScreen.layoutManager = linearLayoutManager
-        binding.recyclerViewMainScreen.adapter = mainAdapter
-    }
-
-    private fun renderData(dayData: List<DayData>){
-        if(!dayData.isNullOrEmpty()){
-            mainAdapter?.setData(dayData.last().taskData!!.toMutableList())
-        }
+    private fun renderData(taskDataList: List<TaskData>){
+            mainAdapter = MainAdapter()
+            mainAdapter?.setData(taskDataList.toMutableList())
+            for(task in taskDataList){
+                newTaskDataList += task
+            }
+            binding.recyclerViewMainScreen.layoutManager = LinearLayoutManager(activity)
+            binding.recyclerViewMainScreen.adapter = mainAdapter
     }
 
     private fun btnInit(){

@@ -3,14 +3,13 @@ package midis.example.task_manager.ui.main_screen
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.*
-import midis.example.task_manager.model.data.DayData
 import midis.example.task_manager.model.data.TaskData
 import midis.example.task_manager.ui.main_screen.interactors.MainInteractorsImpl
 
 class MainViewModel(
     private val mainInteractorsImpl: MainInteractorsImpl
 ): ViewModel() {
-    private val liveDataForViewToObserve: MutableLiveData<List<DayData>> = MutableLiveData()
+    private val liveDataForViewToObserve: MutableLiveData<List<TaskData>> = MutableLiveData()
 
     private val viewModelCoroutineScope = CoroutineScope(
         Dispatchers.Main
@@ -26,9 +25,14 @@ class MainViewModel(
         viewModelCoroutineScope.launch { startInteractorGetTaskData() }
     }
 
-    fun saveTaskData(dayData: DayData) {
+    fun saveTaskData(taskData: TaskData) {
         cancelJob()
-        viewModelCoroutineScope.launch { startInteractorSaveTaskData(dayData = dayData) }
+        viewModelCoroutineScope.launch { startInteractorSaveTaskData(taskData = taskData) }
+    }
+
+    fun updateTaskData(taskData: TaskData){
+        cancelJob()
+        viewModelCoroutineScope.launch { startInteractorUpdateTaskData(taskData = taskData) }
     }
 
     private suspend fun startInteractorGetTaskData() =
@@ -38,9 +42,14 @@ class MainViewModel(
             )
         }
 
-    private suspend fun startInteractorSaveTaskData(dayData: DayData) =
+    private suspend fun startInteractorSaveTaskData(taskData: TaskData) =
         withContext(Dispatchers.IO) {
-                mainInteractorsImpl.saveTaskData(dayData = dayData)
+                mainInteractorsImpl.saveTaskData(taskData = taskData)
+        }
+
+    private suspend fun startInteractorUpdateTaskData(taskData: TaskData) =
+        withContext(Dispatchers.IO) {
+            mainInteractorsImpl.updateTaskData(taskData = taskData)
         }
 
     private fun cancelJob() {
